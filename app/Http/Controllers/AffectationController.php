@@ -17,7 +17,8 @@ class AffectationController extends Controller
     {
         $request->validate([
             'userid' => 'required',
-            'orgid' => 'required'
+            'orgid' => 'required',
+            'orgid_affect' => 'required'
         ]);
         $user = Auth::user();
         $permission = Permission::where('name', 'affectation_org')->first();
@@ -27,40 +28,40 @@ class AffectationController extends Controller
             ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
         if ($organisation) {
             if ($permission_gap) {
-                $affectation = AffectationModel::where('userid', $request->userid)->where('orgid', $request->orgid)->first();
+                $affectation = AffectationModel::where('userid', $request->userid)->where('orgid', $request->orgid_affect)->first();
                 if ($affectation) {
                     if ($request->orgid == null) {
                         $affectation->orgid = $affectation->orgid;
                     } else {
-                        $affectation->orgid = $request->orgid;
+                        $affectation->orgid = $request->orgid_affect;
                     }
                     if ($request->roleid == null) {
                         $affectation->roleid = $affectation->roleid;
                     } else {
                         $affectation->roleid = $request->roleid;
                     }
-                    $affectation->orgid = $request->orgid;
+                    $affectation->orgid = $request->orgid_affect;
                     $affectation->roleid = $request->roleid;
                     $affectation->userid = $request->userid;
                     $affectation->save();
                     return response()->json([
                         "message" => "Affctation réussie avec succèss",
-                        "data" => AffectationModel::with('user', 'organisation', 'role')->where('userid', $request->userid)->where('orgid', $request->orgid)->first()
+                        "data" => AffectationModel::with('user', 'organisation', 'role')->where('userid', $request->userid)->where('orgid', $request->orgid_affect)->first()
                     ], 200);
                 } else {
-                    if (Organisation::where('id', $request->orgid)->first()) {
+                    if (Organisation::where('id', $request->orgid_affect)->first()) {
 
                         if (RoleModel::where('id', $request->roleid)->first()) {
 
                             if (User::where('id', $request->userid)->first()) {
                                 $aff = AffectationModel::create([
-                                    'orgid' => $request->orgid,
+                                    'orgid' => $request->orgid_affect,
                                     'roleid' => $request->roleid,
                                     'userid' => $request->userid,
                                 ]);
                                 return response()->json([
                                     "message" => "Affctation réussie avec succès",
-                                    "data" => AffectationModel::with('user', 'organisation', 'role')->where('userid', $request->userid)->where('orgid', $request->orgid)->first()
+                                    "data" => AffectationModel::with('user', 'organisation', 'role')->where('userid', $request->userid)->where('orgid', $request->orgid_affect)->first()
                                 ], 200);
                             } else {
                                 return response()->json([
@@ -119,7 +120,9 @@ class AffectationController extends Controller
                         'psedo' => $request->psedo,
                     ]);
                     return response()->json([
-                        "message" => "Création de la permission réussie avec succès"
+                        "message" => "Création de la permission réussie avec succès",
+                        "code" => 200,
+                        "data" =>Permission::where('deleted',0)->orderBy('name','asc')->get(),
                     ], 200);
                 }
             } else {
@@ -157,7 +160,9 @@ class AffectationController extends Controller
                     $permission->psedo = $request->psedo;
                     $permission->save();
                     return response()->json([
-                        "message" => "La modification de la permission réussie"
+                        "message" => "La modification de la permission réussie",
+                        "code" => 200,
+                        "data" =>Permission::where('deleted',0)->orderBy('name','asc')->get(),
                     ], 200);
                 } else {
                     return response()->json([
@@ -178,20 +183,34 @@ class AffectationController extends Controller
         }
     }
 
-    public function list_permissions($orgid)
+   public function delete_permission(Request $request, $id)
     {
+        $request->validate([
+            "orgid" => 'required'
+        ]);
         $user = Auth::user();
-        $permission = Permission::where('name', 'view_permission')->first();
-        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
-        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
-        $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
+        $permission = Permission::where('name', 'delete_permission')->first();
+        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
+        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
+        $permission = AffectationPermission::with('permission')->where('permissionid', $permission->id)
             ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
         if ($organisation) {
-            if ($permission_gap) {
-                return response()->json([
-                    "message" => "Liste des permissions",
-                    "data" => Permission::all(),
-                ], 200);
+            if ($permission) {
+                $perm = Permission::where('id', $id)->where('status', 0)->where('deleted', 0)->first();
+                if ($perm) {
+                    $perm->deleted = 1;
+                    $perm->save();
+                    return response()->json([
+                        "message" => 'Liste des permissions',
+                        "code" => 200,
+                        "data" =>Permission::where('deleted',0)->orderBy('name','asc')->get(),
+                    ]);
+                } else {
+                    return response()->json([
+                        "message" => 'Cette identifiant est erronné dans le système!',
+                        "code" => 402,
+                    ], 402);
+                }
             } else {
                 return response()->json([
                     "message" => "Vous ne pouvez pas éffectuer cette action",
@@ -204,6 +223,16 @@ class AffectationController extends Controller
                 "code" => 402
             ], 402);
         }
+    }
+
+    public function list_permissions()
+    {
+
+                return response()->json([
+                    "message" => "Liste des permissions",
+                    "data" => Permission::where('status', 0)->orderBy('name','asc')->where('deleted', 0)->get(),
+                ], 200);
+
     }
 
     public function RetirerAcces(Request $request)

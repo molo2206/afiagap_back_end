@@ -28,13 +28,7 @@ class AlertModel extends Model
         "animal_mort",
         "evenement",
         "mesure",
-        "maladieid",
-        "nb_animal_malade",
-        "nb_animal_mort",
-        "date_detection",
-        "time_detection",
-        "userid",
-        "children"
+        "maladieid"
     ];
 
 }

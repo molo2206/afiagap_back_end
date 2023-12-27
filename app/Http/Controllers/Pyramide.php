@@ -2,11 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AffectationModel;
-use App\Models\AffectationPermission;
 use App\Models\airesante;
 use App\Models\commune;
-use App\Models\Permission;
 use App\Models\province;
 use App\Models\quartier;
 use App\Models\territoir;
@@ -14,7 +11,6 @@ use App\Models\ville;
 use App\Models\zonesante;
 use Illuminate\Http\Request;
 use App\Models\structureSanteModel;
-use Illuminate\Support\Facades\Auth;
 
 class Pyramide extends Controller
 {
@@ -22,45 +18,23 @@ class Pyramide extends Controller
     {
         $request->validate([
             'name' => 'required',
-            'orgid' => 'required',
         ]);
 
-        $user = Auth::user();
-        $permission = Permission::where('name', 'create_province')->first();
-        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
-        $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
-            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
-        if ($organisation) {
-            if ($permission_gap) {
-                if (province::where('name', $request->name)->exists()) {
-                    return response()->json([
-                        "message" => 'Cette province existe déjà dans le système',
-                        "data" => null,
-                        "code" => 422
-                    ], 422);
-                } else {
-                    $user = province::create([
-                        'name' => $request->name,
-                    ]);
-                    return response()->json([
-                        "message" => "Enregistrement avec succès!",
-                        "code" => 200,
-                        "data" => province::all(),
-                    ], 200);
-                }
-            } else {
-
-                return response()->json([
-                    "message" => "Vous ne pouvez pas éffectuer cette action",
-                    "code" => 402
-                ], 402);
-            }
-        } else {
+        if (province::where('name', $request->name)->exists()) {
             return response()->json([
-                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
-                "code" => 402
-            ], 402);
+                "message" => 'Cette province existe déjà dans le système',
+                "data" => null,
+                "code" => 422
+            ], 422);
+        } else {
+            $user = province::create([
+                'name' => $request->name,
+            ]);
+            return response()->json([
+                "message" => "Enregistrement avec succès!",
+                "code" => 200,
+                "data" => province::all(),
+            ], 200);
         }
     }
 
@@ -137,7 +111,7 @@ class Pyramide extends Controller
             } else {
                 $province->territoir()->create([
                     'name' => $request->name,
-                    'provinceid' => $request->provinceid
+                    'provinceid' =>$request->provinceid
                 ]);
                 return response()->json([
                     "message" => "Enregistrement avec succès!",
@@ -220,11 +194,13 @@ class Pyramide extends Controller
         $request->validate([
             'name' => 'required',
             'zoneid' => 'required',
+            
         ]);
         if (!airesante::where('name', $request->name)->exists()) {
             $zone = airesante::create([
                 'name' => $request->name,
                 'zoneid' => $request->zoneid,
+                'nbr_population' => $request->nbr_population,
             ]);
             return response()->json([
                 "message" => "Liste aires santé",
@@ -257,8 +233,8 @@ class Pyramide extends Controller
             ], 200);
         }
     }
-
-    public function addstructure(Request $request)
+    
+      public function addstructure(Request $request)
     {
         $request->validate([
             'name' => 'required',
@@ -277,7 +253,7 @@ class Pyramide extends Controller
             } else {
                 structureSanteModel::create([
                     'name' => $request->name,
-                    'aireid' => $request->aireid,
+                    'aireid' =>$request->aireid,
                     'contact' => $request->contact,
                 ]);
                 return response()->json([
@@ -306,7 +282,7 @@ class Pyramide extends Controller
         } else {
             $allstructure = structureSanteModel::where('aireid', $aire->id)->first();
             return response()->json([
-                "message" => "Liste des structure de aire de santé :" . ($allstructure->name),
+                "message" => "Liste des structure de aire de santé :".($allstructure->name),
                 "data" =>  structureSanteModel::where('aireid', $aire->id)->get(),
                 "code" => 200,
             ], 200);

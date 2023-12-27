@@ -32,6 +32,7 @@ class RoleController extends Controller
                         ]);
                         return response()->json([
                             "message" => "Création du role réussie"
+                            
                         ], 200);
                     } else {
                         return response()->json([
@@ -153,38 +154,14 @@ class RoleController extends Controller
 
     public function list_roles($orgid)
     {
-        $user = Auth::user();
-        $permission = Permission::where('name', 'view_role')->first();
-        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
-        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
-        $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
-            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
-        if ($organisation) {
-            if ($permission_gap) {
-                if ($user) {
-                    $allprovince = RoleModel::all();
+       
+                    $allrole = RoleModel::where('deleted',0)->get();
                     return response()->json([
                         "message" => "Liste des roles!",
-                        "data" => $allprovince,
+                        "data" => $allrole,
                         "code" => 200,
                     ], 200);
-                } else {
-                    return response()->json([
-                        "message" => "Identifiant not found",
-                        "code" => "402"
-                    ], 402);
-                }
-            } else {
-                return response()->json([
-                    "message" => "Vous ne pouvez pas éffectuer cette action",
-                    "code" => 402
-                ], 402);
-            }
-        } else {
-            return response()->json([
-                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
-                "code" => 402
-            ], 402);
-        }
+               
+           
     }
 }

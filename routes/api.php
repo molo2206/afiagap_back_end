@@ -1,5 +1,5 @@
 <?php
-
+use App\Http\Controllers\ActiviteController;
 use App\Http\Controllers\AdressController;
 use App\Http\Controllers\AffectationController;
 use App\Http\Controllers\CriseController;
@@ -15,8 +15,10 @@ use App\Models\AffectationModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AlertController;
+use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\MenageController;
 use App\Http\Controllers\ScoreCardController;
+use App\Http\Controllers\PublicationsController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -39,6 +41,10 @@ Route::post('/ask_otp', [UserController::class, 'askcodevalidateion']);
 Route::post('/lost_pswd', [UserController::class, 'Lost_pswd']);
 Route::post('/provider', [UserController::class, 'AuthProvider']);
 Route::post('/test_otp', [UserController::class, 'Test_code_validation']);
+Route::get('/gap/getlastgapvalide',[GapsController::class, 'getlastgapvalide']);
+Route::get('/alert/getlastalertvalide',[AlertController::class, 'getlastalertvalide']);
+Route::post('/contact/getintouch',[PublicationsController::class, 'contact']);
+Route::get('/configuration/get_infos_organisation',[ConfigurationController::class,'get_infos_organisation']);
 
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
@@ -46,11 +52,12 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/affectation/addaffectation', [AffectationController::class, 'Affectation']);
     Route::post('/permission/addpermission', [AffectationController::class, 'create_permission']);
     Route::post('/permission/updatepermission/{id}', [AffectationController::class, 'update_permission']);
-    Route::get('/permission/listpermission/{id}', [AffectationController::class, 'list_permissions']);
+    Route::delete('/permission/deletepermission/{id}', [AffectationController::class, 'delete_permission']);
+    Route::get('/permission/listpermission', [AffectationController::class, 'list_permissions']);
     Route::post('/permission/donnerPermission', [AffectationController::class, 'affecterPermission']);
-    Route::get('/permission/list_permission', [AffectationController::class, 'List_PermissionsAccordees']);
+    Route::get('/permission/list_permission/{id}', [AffectationController::class, 'List_PermissionsAccordees']);
     Route::post('/permission/retireracces', [AffectationController::class, 'RetirerAcces']);
-    Route::delete('/users/deleteuser', [UserController::class, 'SupprimerUser']);
+    Route::put('/users/deleteuser/{userid}/{orgid}', [UserController::class, 'SupprimerUser']);
     Route::get('/users/listeUsers', [UserController::class, 'listeUsersAffecter']);
     Route::get('/users/User_organisation/{id}', [UserController::class, 'listeUsersParOrganisation']);
     Route::get('/users/getuserid/{id}',[UserController::class, 'getuserId']);
@@ -59,17 +66,22 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::put('/users/updateuser/{id}',[UserController::class, 'UpdateUser']);
     Route::post('/users/changepswdprofil',[UserController::class, 'changePswdProfil']);
     Route::post('/users/editimage',[UserController::class, 'editImage']);
+    Route::get('/users/get_user',[UserController::class, 'getuser']);
+    Route::post('/users/new_user', [UserController::class, 'NewUser']);
+    
+    
 
     //les routes des permissions
     Route::post('/role/addrole/{id}', [RoleController::class, 'create']);
-    Route::post('/role/updaterole/{id}', [RoleController::class, 'update']);
+    Route::post('/role/updaterole/{id}', [RoleController::class, 'updaterole']);
     Route::post('/role/deleterole/{id}', [RoleController::class, 'deleterole']);
     Route::get('/role/list/{id}', [RoleController::class, 'list_roles']);
+
 
     //les routes maladie
     Route::post('/maladie/addmaladie/{id}', [MaladieController::class, 'AddMaladie']);
     Route::post('/maladie/updatemaladie/{id}', [MaladieController::class, 'updateMaladie']);
-    Route::get('/maladie/list/{id}', [MaladieController::class, 'listMaladie']);
+    Route::get('/maladie/list', [MaladieController::class, 'listMaladie']);
 
     //les routes crises
     Route::post('/crise/addcrise', [CriseController::class, 'AddCrise']);
@@ -92,6 +104,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/addtype', [OrganisationController::class, 'addtypeorg']);
     Route::get('/listtyp', [OrganisationController::class, 'listtype']);
     Route::post('/addorga', [OrganisationController::class, 'addOrg']);
+    Route::post('/org/update_org/{id}', [OrganisationController::class, 'updateorganisation']);
     Route::post('/addindic', [OrganisationController::class, 'addindicateur']);
     Route::get('/org_ind', [OrganisationController::class, 'org_indicateur']);
     Route::get('/list_org', [OrganisationController::class, 'list_organisation']);
@@ -112,10 +125,15 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/structure/liststructure/{id}', [Pyramide::class, 'liststructure_par_aire']);
     //Gap medical
     Route::post('/gap/sendGap', [GapsController::class, 'AddGap']);
+    Route::post('/gap/sendImageGap/{id}', [GapsController::class, 'Imagegap']);
+    Route::post('/gap/updategap/{id}', [GapsController::class, 'UpdateGap']);
+    Route::delete('/gap/deletegap/{id}', [GapsController::class ,'deletegap']);
     Route::post('/gap/validegap/{id}', [GapsController::class, 'valideGap']);
     Route::get('/gap/listgap/{id}', [GapsController::class, 'listGap']);
-    Route::get('/gap/listgap_by_user', [GapsController::class, 'listGapByuser']);
-    Route::get('/gap/listgap_valide_byuser',[GapsController::class, 'listGapValideByuser']);
+    Route::get('/gap/listgap_by_user/{id}', [GapsController::class, 'listGapByuser']);
+    Route::get('/gap/listgap_valide_byuser/{id}',[GapsController::class, 'listGapValideByuser']);
+    Route::get('/gap/list_gap_validerepondu/{id}',[GapsController::class, 'listGapValideRepondu']);
+    Route::get('/gap/listgap_valide/{id}',[GapsController::class, 'listGapValide']);
     Route::get('/gap/listgap1', [GapsController::class, 'listgap1']);
 
     Route::get('/gap/listgap_province/{id}', [GapsController::class, 'listGapProvince']);
@@ -124,16 +142,28 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/gap/listgap_aire/{id}', [GapsController::class, 'listGapAire']);
     Route::get('/gap/detailgap/{id}', [GapsController::class, 'DetailGaps']);
 
-    //Gap medical
+    //Alert 
     Route::post('/alert/sendAlert', [AlertController::class, 'sendAlert']);
-    Route::post('/alert/updateAlert/{id}', [AlertController::class, 'updateAlert']);
-    Route::put('/alert/valider_alert/{id}', [AlertController::class, 'validerAlert']);
+    Route::post('/alert/sendimageAlert/{id}', [AlertController::class, 'Imagealert']);
+    Route::put('/alert/updateAlert/{id}', [AlertController::class, 'updateAlert']);
+    Route::post('/alert/updateAlertMobile/{id}', [AlertController::class, 'updateAlert']);
     Route::post('/alert/suppressionalert/{id}', [AlertController::class, 'suppressionalert']);
+    Route::post('/alert/rejetealert/{id}', [AlertController::class, 'rejetealert']);
+    Route::put('/alert/valider_alert/{id}', [AlertController::class, 'validerAlert']);
+    Route::post('/alert/valider_alertMobile/{id}', [AlertController::class, 'validerAlert']);
     Route::get('/alert/listalert/{id}', [AlertController::class, 'getAlert']);
     Route::get('/alert/listalertvalide/{id}', [AlertController::class, 'getAlertvalide']);
     Route::get('/alert/detailAlert/{id}', [AlertController::class, 'getDetailAlert']);
     Route::get('/alert/alertbyuser/{id}', [AlertController::class, 'alertuser']);
+    Route::get('/alert/get_alert_valide_byuser/{id}', [AlertController::class, 'getAlertvalideByuser']);
+    Route::get('/alert/get_alertinvalide_byuser/{id}',[AlertController::class,'getAlertInvalideByuser']);
+    Route::get('/alert/get_all_alertinvalide/{id}', [AlertController::class,'getAlertInvalide']);
+    
+     //Publication
+    Route::post('/publication/addpublication',[PublicationsController::class,'addpublication']);
+    Route::get('/publication/getpublication',[PublicationsController::class,'getpublication']);
 
+    
      //ScoreCard
     Route::post('/scorecard/addentete_question', [ScoreCardController::class, 'AddEntete']);
     Route::get('/scorecard/listentete', [ScoreCardController::class, 'list_entete']);
@@ -143,15 +173,28 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     //Menage & personne
     Route::post('/menage/new_menage', [MenageController::class, 'create_menage']);
+    Route::post('/menage/deletemenage',[MenageController::class, 'delete_menage']);
     Route::put('/menage/update_menage/{id}', [MenageController::class, 'updatemenage']);
     Route::post('/menage/new_personne', [MenageController::class, 'create_personne']);
     Route::post('/menage/update_personne/{id}', [MenageController::class, 'updatepersonne']);
     Route::get('/menage/list_typepersonne', [MenageController::class, 'listtypepersonne']);
-    Route::get('/menage/liste_rolemenage', [MenageController::class, 'listerolemenage']);
     Route::get('/menage/liste_question', [MenageController::class, 'listequestion']);
+    Route::get('/menage/liste_rolemenage', [MenageController::class, 'listerolemenage']);
     Route::get('/menage/list_menage', [MenageController::class, 'listmenage']);
     Route::get('/menage/code_menage/{code}', [MenageController::class, 'CodeMenage']);
     Route::get('/menage/detail_menage/{id}', [MenageController::class, 'DetailMenage']);
     Route::get('/menage/list_critere', [MenageController::class, 'listcritere']);
-
+    
+    //Gestion des activitées de l'entrepise
+    Route::post('/activite/create_activite',[ActiviteController::class, 'create_activite']);
+    Route::post('/activite/update_activite/{id}',[ActiviteController::class, 'updateactivite']);
+    Route::get('/activite/get_activite/{id}',[ActiviteController::class, 'get_activite']);
+    Route::get('/activite/detailactivite/{id}',[ActiviteController::class,'detailActivite']);
+    Route::get('/activite/getcohp',[ActiviteController::class,'getcohp']);
+    
+    
+     // Configuration afiagap
+    Route::post('/configuration/create_infos_app',[ConfigurationController::class, 'create_infos_app']);
+    Route::post('/configuration/create_logo_fiveicon',[ConfigurationController::class, 'create_logo_fiveicon']);
+    
 });

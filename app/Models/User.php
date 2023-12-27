@@ -27,6 +27,7 @@ class User extends Authenticatable
         'phone',
         'gender',
         'status',
+        'deleted',
         'profil',
         'dateBorn',
         'id',
@@ -56,8 +57,7 @@ class User extends Authenticatable
     }
     public function affectation1()
     {
-        return $this->belongsToMany(Organisation::class, 't__affectations', 'orgid', 'roleid');
+        return $this->belongsTo(Organisation::class, 't__affectations', 'orgid', 'roleid');
     }
-
 
 }

@@ -25,7 +25,7 @@ class MenageModel extends Model
 
     public function datapersonne()
     {
-        return $this->hasMany(PersonnesModel::class, 'manageid','id');
+        return $this->hasMany(PersonnesModel::class, 'manageid','id')->orderBy('created_at', 'asc');
     }
 
     public function dataallcritere()

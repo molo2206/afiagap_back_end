@@ -64,7 +64,7 @@ class MenageController extends Controller
                     return response()->json([
                         "message" => "Traitement reussi avec succès",
                         "code" => 200,
-                        "data" => MenageModel::with('dataallcritere.datacritere', 'datapersonne.datatype_personne', 'datapersonne.datarole')->where('id', $datamenage->id)->first()
+                        "data" => MenageModel::with('dataallcritere.datacritere', 'datapersonne.datatype_personne', 'datapersonne.datarole')->orderBy('created_at','desc')->where('id', $datamenage->id)->first()
                     ], 200);
                 } else {
                     $datamenage = MenageModel::create([
@@ -84,7 +84,7 @@ class MenageController extends Controller
                     return response()->json([
                         "message" => "Traitement reussi avec succès",
                         "code" => 200,
-                        "data" => MenageModel::with('dataallcritere.datacritere', 'datapersonne.datatype_personne', 'datapersonne.datarole')->where('id', $datamenage->id)->first()
+                        "data" => MenageModel::with('dataallcritere.datacritere', 'datapersonne.datatype_personne', 'datapersonne.datarole')->orderBy('created_at','desc')->where('id', $datamenage->id)->first()
                     ], 200);
                 }
             } else {
@@ -101,6 +101,41 @@ class MenageController extends Controller
         }
     }
 
+ public function delete_menage(Request $request)
+    {
+        $user = Auth::user();
+        $permission = Permission::where('name', 'create_menage')->first();
+        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
+        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
+        $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
+            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
+        $datamenage = MenageModel::where('id', $request->id)->first();
+        if ($organisation) {
+            if ($permission_gap) {
+                if ($datamenage) {
+                    $datamenage->deleted = 1;
+                    $datamenage->save();
+                    return response()->json([
+                        "message" => "Traitement reussi avec succès",
+                        "code" => 200,
+                        "data" => MenageModel::with('dataallcritere.datacritere', 'datapersonne.datatype_personne', 'datapersonne.datarole')->orderBy('created_at', 'desc')
+                        ->where('id', $datamenage->id)->where('deleted',0)->first()
+                    ], 200);
+                } else {
+                }
+            } else {
+                return response()->json([
+                    "message" => "Vous ne pouvez pas éffectuer cette action",
+                    "code" => 402
+                ], 402);
+            }
+        } else {
+            return response()->json([
+                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
+                "code" => 402
+            ], 402);
+        }
+    }
     public function updatemenage(Request $request, $id)
     {
         $request->validate([
@@ -117,25 +152,27 @@ class MenageController extends Controller
         $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
         $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
             ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
-        $datamenage = MenageModel::where('id', $id)->exists();
+        $datamenage = MenageModel::where('id', $id)->first();
         if ($organisation) {
             if ($permission_gap) {
                 if ($datamenage) {
+
                     $datamenage->adresse_actuel = $request->adresse_actuel;
                     $datamenage->taille = $request->taille;
                     $datamenage->habitation = $request->habitation;
                     $datamenage->origine = $request->origine;
                     $datamenage->userid = $request->userid;
-
+                    $datamenage->save();
                     foreach ($request->datacritere as $item) {
-                        $datacritere = CritereMenageModel::where('menageid', $id)->exists();
-                        $datacritere->menageid = $request->id;
-                        $datacritere->cretereid = $request->$item;
+                        $datacriteres = CritereMenageModel::where('menageid', $id)->first();
+                        $datacriteres->cretereid = $item;
+                        $datacriteres->save();
                     }
+
                     return response()->json([
                         "message" => "Traitement reussi avec succès",
                         "code" => 200,
-                        "data" => MenageModel::with('dataallcritere.datacritere', 'datapersonne.datatype_personne', 'datapersonne.datarole')->where('id', $datamenage->id)->first()
+                        "data" => MenageModel::with('dataallcritere.datacritere', 'datapersonne.datatype_personne', 'datapersonne.datarole')->orderBy('created_at','desc')->where('id', $datamenage->id)->first()
                     ], 200);
                 } else {
                 }
@@ -200,7 +237,6 @@ class MenageController extends Controller
             'nom_pere' => 'required',
             'lieu_naissance' => 'required',
             'datenaiss' => 'required',
-            'photo' => 'required',
             "menageid" => 'required',
             "nom_mere" => 'required',
             "orgid" => 'required',
@@ -215,39 +251,70 @@ class MenageController extends Controller
             ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
 
         $datamenage = MenageModel::where('id', $request->menageid)->first();
-        $datapersonne = PersonnesModel::find($id);
+        $datapersonne = PersonnesModel::where('id', $id)->where('manageid', $request->menageid)->first();
         if ($organisation) {
             if ($permission_gap) {
                 if ($datamenage) {
                     if ($datapersonne) {
-                        $datapersonne->nom = $request->nom;
-                        $datapersonne->postnom = $request->postnom;
-                        $datapersonne->prenom = $request->prenom;
-                        $datapersonne->sexe = $request->sexe;
-                        $datapersonne->roleid = $request->roleid;
-                        $datapersonne->typepersonneid = $request->typepersonneid;
-                        $datapersonne->nom_pere = $request->nom_pere;
-                        $datapersonne->probleme_sante = $request->probleme_sante;
-                        $datapersonne->lieu_naissance = $request->lieu_naissance;
-                        $datapersonne->datenaiss = $request->datenaiss;
-                        $datapersonne->sous_moustiquaire = $request->sous_moustiquaire;
-                        $datapersonne->photo = $image;
-                        $datapersonne->nom_mere = $request->nom_mere;
-                        $datapersonne->manageid = $request->menageid;
-                        $datapersonne->femme_enceinte = $request->femme_enceint;
-                        $datapersonne->femme_allaitante = $request->femme_allaitante;
-                        $datapersonne->save();
+                        if ($image) {
+                            $datapersonne->nom = $request->nom;
+                            $datapersonne->postnom = $request->postnom;
+                            $datapersonne->prenom = $request->prenom;
+                            $datapersonne->sexe = $request->sexe;
+                            $datapersonne->roleid = $request->roleid;
+                            $datapersonne->typepersonneid = $request->typepersonneid;
+                            $datapersonne->nom_pere = $request->nom_pere;
+                            $datapersonne->probleme_sante = $request->probleme_sante;
+                            $datapersonne->lieu_naissance = $request->lieu_naissance;
+                            $datapersonne->datenaiss = $request->datenaiss;
+                            $datapersonne->sous_moustiquaire = $request->sous_moustiquaire;
+                            $datapersonne->photo = $image;
+                            $datapersonne->nom_mere = $request->nom_mere;
+                            $datapersonne->manageid = $request->menageid;
+                            $datapersonne->femme_enceinte = $request->femme_enceint;
+                            $datapersonne->femme_allaitante = $request->femme_allaitante;
+                            $datapersonne->save();
+
+                            if (now()->diffInDays($request->datenaiss, true) < 1825) {
+                                $reponse = CalendrierVaccinModel::where('personneid', $id);
+                                $reponse->name = $request->calendrier;
+                                $reponse->save();
+                            }
+
+                            return response()->json([
+                                "message" => "La modification réussie avec succès",
+                                "data" => MenageModel::with('datapersonne.datatype_personne', 'datapersonne.datarole')->orderBy('created_at','desc')->where('id', $request->menageid)->get()
+                            ], 200);
+                        } else {
+                            $datapersonne->nom = $request->nom;
+                            $datapersonne->postnom = $request->postnom;
+                            $datapersonne->prenom = $request->prenom;
+                            $datapersonne->sexe = $request->sexe;
+                            $datapersonne->roleid = $request->roleid;
+                            $datapersonne->typepersonneid = $request->typepersonneid;
+                            $datapersonne->nom_pere = $request->nom_pere;
+                            $datapersonne->probleme_sante = $request->probleme_sante;
+                            $datapersonne->lieu_naissance = $request->lieu_naissance;
+                            $datapersonne->datenaiss = $request->datenaiss;
+                            $datapersonne->sous_moustiquaire = $request->sous_moustiquaire;
+                            $datapersonne->nom_mere = $request->nom_mere;
+                            $datapersonne->manageid = $request->menageid;
+                            $datapersonne->femme_enceinte = $request->femme_enceint;
+                            $datapersonne->femme_allaitante = $request->femme_allaitante;
+                            $datapersonne->save();
 
 
-                        if (now()->diffInDays($request->datenaiss, true) < 1825) {
-                            $reponse = CalendrierVaccinModel::where('personneid', $id);
-                            $reponse->name = $request->calendrier;
-                            $reponse->save();
+                            if (now()->diffInDays($request->datenaiss, true) < 1825) {
+                                $reponse = CalendrierVaccinModel::where('personneid', $id);
+                                $reponse->name = $request->calendrier;
+                                $reponse->save();
+                            }
+
+                            return response()->json([
+                                "message" => "La modification réussie avec succès",
+                                "data" => MenageModel::with('datapersonne.datatype_personne', 'datapersonne.datarole')->orderBy('created_at','desc')->where('id', $request->menageid)->get()
+                            ], 200);
                         }
-
-                        return response()->json([
-                            "message" => "La modification réussie avec succès"
-                        ], 200);
                     } else {
                         return response()->json([
                             "message" => "Erreur de la modification avec cette id :" . $id,
@@ -255,7 +322,8 @@ class MenageController extends Controller
                     }
                 } else {
                     return response()->json([
-                        "message" => "ce menage" . $datamenage->code_menage . "n'existe pas",
+                        "message" => "cette personne (" .  $datapersonne->nom = $request->nom . " " .
+                            $datapersonne->postnom = $request->postnom . " ) n'existe pas",
                         "code" => 402
                     ], 402);
                 }
@@ -337,7 +405,7 @@ class MenageController extends Controller
                             'nom_mere' => $request->nom_mere,
                             'manageid' => $request->menageid,
                             'femme_enceinte' => $request->femme_enceinte,
-                            'femme_allaitante'=> $request->femme_allaitante,
+                            'femme_allaitante' => $request->femme_allaitante,
                         ]);
 
 
@@ -350,7 +418,7 @@ class MenageController extends Controller
                         return response()->json([
                             "message" => "Traitement reussi avec succès",
                             "code" => 200,
-                            "data" => MenageModel::with('dataallcritere.datacritere', 'datapersonne.datatype_personne', 'datapersonne.datarole')->where('id', $request->menageid)->get()
+                            "data" => MenageModel::with('dataallcritere.datacritere', 'datapersonne.datatype_personne', 'datapersonne.datarole')->orderBy('created_at','desc')->where('id', $request->menageid)->get()
                         ], 200);
                     } else {
                         if ($datamenage) {
@@ -377,7 +445,7 @@ class MenageController extends Controller
                                 'nom_mere' => $request->nom_mere,
                                 'manageid' => $request->menageid,
                                 'femme_enceinte' => $request->femme_enceinte,
-                                'femme_allaitante'=> $request->femme_allaitante,
+                                'femme_allaitante' => $request->femme_allaitante,
                             ]);
 
 
@@ -390,7 +458,7 @@ class MenageController extends Controller
                             return response()->json([
                                 "message" => "Traitement reussi avec succès",
                                 "code" => 200,
-                                "data" => MenageModel::with('datapersonne.datatype_personne', 'datapersonne.datarole')->where('id', $request->menageid)->get()
+                                "data" => MenageModel::with('datapersonne.datatype_personne', 'datapersonne.datarole')->orderBy('created_at','desc')->where('id', $request->menageid)->get()
                             ], 200);
                         }
                     }
@@ -421,7 +489,7 @@ class MenageController extends Controller
                                 'nom_mere' => $request->nom_mere,
                                 'manageid' => $request->menageid,
                                 'femme_enceinte' => $request->femme_enceinte,
-                                'femme_allaitante'=> $request->femme_allaitante,
+                                'femme_allaitante' => $request->femme_allaitante,
                             ]);
 
 
@@ -434,7 +502,7 @@ class MenageController extends Controller
                             return response()->json([
                                 "message" => "Traitement reussi avec succès",
                                 "code" => 200,
-                                "data" => MenageModel::with('datapersonne.datatype_personne', 'datapersonne.datarole')->where('id', $request->menageid)->get()
+                                "data" => MenageModel::with('datapersonne.datatype_personne', 'datapersonne.datarole')->orderBy('created_at','desc')->where('id', $request->menageid)->get()
                             ], 200);
                         } else {
                             if ($datamenage) {
@@ -461,7 +529,7 @@ class MenageController extends Controller
                                     'nom_mere' => $request->nom_mere,
                                     'manageid' => $request->menageid,
                                     'femme_enceinte' => $request->femme_enceinte,
-                                    'femme_allaitante'=> $request->femme_allaitante,
+                                    'femme_allaitante' => $request->femme_allaitante,
                                 ]);
 
 
@@ -474,7 +542,7 @@ class MenageController extends Controller
                                 return response()->json([
                                     "message" => "Traitement reussi avec succès",
                                     "code" => 200,
-                                    "data" => MenageModel::with('dataallcritere.datacritere', 'datapersonne.datatype_personne', 'datapersonne.datarole')->where('id', $request->menageid)->get()
+                                    "data" => MenageModel::with('dataallcritere.datacritere', 'datapersonne.datatype_personne', 'datapersonne.datarole')->orderBy('created_at','desc')->where('id', $request->menageid)->get()
                                 ], 200);
                             }
                         }
@@ -496,10 +564,11 @@ class MenageController extends Controller
 
     public function listmenage()
     {
+        
         return response()->json([
             "message" => "Liste des menages",
             "code" => 200,
-            "data" => MenageModel::with('dataallcritere.datacritere', 'datapersonne.datatype_personne', 'datapersonne.datarole')->get()
+            "data" => MenageModel::with('dataallcritere.datacritere', 'datapersonne.datatype_personne', 'datapersonne.datarole')->where('status',0)->orderBy('created_at', 'DESC')->get()
         ], 200);
     }
 
@@ -524,10 +593,11 @@ class MenageController extends Controller
             ], 402);
         }
     }
+
     public function DetailMenage($id)
     {
         $datamenage = MenageModel::where('id', $id)->first();
-        if ($datamenage){
+        if ($datamenage) {
             return response()->json([
                 "message" => "Liste des menages",
                 "code" => 200,

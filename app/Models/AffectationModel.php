@@ -9,9 +9,9 @@ use Illuminate\Notifications\Notifiable;
 
 class AffectationModel extends Model
 {
-    use HasFactory, HasUuids, HasFactory, Notifiable;
+    use HasFactory,HasUuids,HasFactory,Notifiable;
 
-    protected $table = "t__affectations";
+    protected $table="t__affectations";
 
     protected $fillable = [
         'orgid',
@@ -19,28 +19,21 @@ class AffectationModel extends Model
         'userid',
     ];
 
-    public function user()
-    {
-        return $this->belongsTo(User::class, 'userid', 'id');
+    public function user(){
+        return $this->belongsTo(User::class, 'userid','id');
     }
 
-    public function role()
-    {
-        return $this->belongsTo(RoleModel::class, 'roleid', 'id');
+    public function role(){
+        return $this->belongsTo(RoleModel::class, 'roleid','id');
     }
 
     public function organisation()
     {
-        return $this->hasMany(Organisation::class, 'id', 'orgid');
+        return $this->belongsTo(Organisation::class, 'orgid', 'id');
     }
 
-    public function allpermission()
-    {
-        return $this->hasMany(AffectationPermission::class, 'affectationid', 'id');
+ public function allpermission(){
+        return $this->hasMany(AffectationPermission::class, 'affectationid','id');
     }
 
-    public function can($name)
-    {
-        return $this->allpermission()->where('pseudo', $name)->where('status', 1)->where('deleted', 0)->exists();
-    }
 }

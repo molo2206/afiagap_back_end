@@ -6,9 +6,11 @@ use App\Models\AffectationModel;
 use App\Models\AffectationPermission;
 use App\Models\airesante;
 use App\Models\AlertModel;
+use App\Models\ImageAlertModel;
 use App\Models\Permission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use DateTime;
 
 class AlertController extends Controller
 {
@@ -18,22 +20,7 @@ class AlertController extends Controller
             'name_point_focal' => 'required',
             "phone" => 'required',
             "airid" => 'required',
-            "date_notification" => 'required',
-            "datealert" => 'required',
-            "timealert" => 'required',
-            "nbr_touche" => 'required',
-            "dece_disponible" => 'required',
-            "nbr_dece" => 'required',
-            "animal_malade" => 'required',
-            "animal_mort" => 'required',
-            "evenement" => 'required',
-            "mesure" => 'required',
-            "maladieid" => 'required',
-            "nb_animal_malade" => 'required',
-            "nb_animal_mort" => 'required',
-            "date_detection" => 'required',
-            "time_detection"  => 'required',
-            "orgid" => 'required',
+
         ]);
         $user = Auth::user();
         $permission = Permission::where('name', 'create_alert')->first();
@@ -68,15 +55,19 @@ class AlertController extends Controller
                                     "date_detection" => $request->date_detection,
                                     "time_detection"  => $request->time_detection,
                                     "userid" => $user->id,
-                                    "orguserid" => $affectationuser->orgid
+                                    "orguserid" => $affectationuser->orgid,
+                                    "status" =>0
                                 ]);
+
                                 return response()->json([
                                     "code" => 200,
                                     "message" => 'Alert envoyé avec succès!',
                                     "data" => AlertModel::with(
+                                        'datauser',
                                         'dataaire.zonesante.territoir.province',
-                                        'maladie'
-                                    )->where('deleted', 0)->where('status', 0)->get(),
+                                        'maladie',
+                                        'images'
+                                    )->where('deleted', 0)->where('status', 0)->first(),
                                 ], 200);
                             } else {
                                 return response()->json([
@@ -156,6 +147,7 @@ class AlertController extends Controller
                     $datagalert->save();
                 }
                 $aire = airesante::find($request->airid);
+                $status=1;
                 if ($aire) {
                     if ($request->dece_disponible == "oui" || $request->dece_disponible == "non") {
                         if ($request->animal_malade == "oui" || $request->animal_malade == "non") {
@@ -181,16 +173,28 @@ class AlertController extends Controller
                                         "nb_animal_mort" => $request->nb_animal_mort,
                                         "date_detection" => $request->date_detection,
                                         "time_detection"  => $request->time_detection,
-                                        "userid" => $user->id,
+                                        "userid_valider" => $user->id,
                                         "children" => $datagalert->id,
-                                        "orguserid" => $request->orgid
+                                        "orguserid" => $request->orgid,
+                                        "status" => $status
                                     ]);
+                                     //INSERTION IMAGES ALERT
+                                    if ($datagalert) {
+                                        foreach ($datagalert->images()->get() as $item) {
+                                            $alert->imagesalert()->attach([$alert->id =>
+                                            [
+                                                'image' => $item->image,
+                                            ]]);
+                                        }
+                                    }
                                     return response()->json([
                                         "message" => 'Alert investiguée avec succès!',
                                         "data" => AlertModel::with(
+                                            'datauser',
                                             'dataaire.zonesante.territoir.province',
-                                            'maladie'
-                                        )->where('deleted', 0)->where('status', 0)->get(),
+                                            'maladie',
+                                            'images'
+                                        )->where('id',  $alert->id)->orderBy('updated_at', 'desc')->where('deleted', 0)->where('status', 1)->whereNot('children',null)->first(),
                                     ], 200);
                                 } else {
                                     return response()->json([
@@ -251,7 +255,7 @@ class AlertController extends Controller
         ]);
 
         $user = Auth::user();
-        $permission = Permission::where('name', 'create_alert')->first();
+        $permission = Permission::where('name', 'update_alert')->first();
         $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
         $permission_send_alert = AffectationPermission::with('permission')->where('permissionid', $permission->id)
             ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
@@ -284,16 +288,19 @@ class AlertController extends Controller
                                     $datagalert->date_detection = $request->date_detection;
                                     $datagalert->time_detection = $request->time_detection;
                                     $datagalert->userid = $user->id;
-                                    $datagalert->children = $datagalert->id;
                                     $datagalert->orguserid = $request->orgid;
                                     $datagalert->save();
+
+
                                     return response()->json([
                                         "code" => 200,
                                         "message" => 'Alert modifié avec succès!',
                                         "data" => AlertModel::with(
+                                            'datauser',
                                             'dataaire.zonesante.territoir.province',
-                                            'maladie'
-                                        )->where('deleted', 0)->where('status', 0)->get(),
+                                            'maladie',
+                                            'images'
+                                        )->orderBy('updated_at', 'desc')->where('deleted', 0)->where('status', 0)->get(),
                                     ], 200);
                                 } else {
                                     return response()->json([
@@ -352,9 +359,50 @@ class AlertController extends Controller
                     "code" => 200,
                     "message" => 'Alerte est rejeté avec succès!',
                     "data" => AlertModel::with(
+                        'datauser',
                         'dataaire.zonesante.territoir.province',
-                        'maladie'
+                        'maladie',
+                        'images'
                     )->where('deleted', 0)->where('status', 0)->get(),
+                ], 200);
+            } else {
+                return response()->json([
+                    "code" => 402,
+                    "message" => 'Cette alerte n\'existe pas dans le système',
+                ], 200);
+            }
+        } else {
+            return response()->json([
+                "code" => 402,
+                "message" => "Vous ne pouvez pas éffectuer cette action"
+            ], 402);
+        }
+    }
+
+    public function rejetealert(Request $request, $id)
+    {
+        $request->validate([
+            "orgid" => "required"
+        ]);
+
+        $user = Auth::user();
+        $permission = Permission::where('name', 'investigation_alert')->first();
+        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
+        $permission_send_alert = AffectationPermission::with('permission')->where('permissionid', $permission->id)
+            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
+        if ($permission_send_alert) {
+            $datagalert = AlertModel::where('id', $id)->where('deleted', 0)->where('status', 0)->first();
+            if ($datagalert) {
+                $datagalert->status = 2;
+                $datagalert->save();
+                return response()->json([
+                    "code" => 200,
+                    "message" => 'Alerte est rejeté avec succès!',
+                    "data" => AlertModel::with(
+                        'dataaire.zonesante.territoir.province',
+                        'maladie',
+                        'images'
+                    )->where('status', 2)->get(),
                 ], 200);
             } else {
                 return response()->json([
@@ -372,6 +420,7 @@ class AlertController extends Controller
 
     public function getAlert($orgid)
     {
+
         $user = Auth::user();
         $permission = Permission::where('name', 'view_alert')->first();
         $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
@@ -382,7 +431,8 @@ class AlertController extends Controller
             if ($permission_gap) {
                 return response()->json([
                     "message" => "Liste des alerts",
-                    "data" => AlertModel::with('dataaire.zonesante.territoir.province', 'maladie')->where('status', 0)->where('deleted', 0)->get(),
+                    "data" => AlertModel::with('datauser', 'dataaire.zonesante.territoir.province', 'maladie',
+                                            'images')->where('deleted', 0)->where('status', 0)->where('children',null)->get(),
                 ], 200);
             } else {
                 return response()->json([
@@ -409,8 +459,37 @@ class AlertController extends Controller
         if ($organisation) {
             if ($permission_gap) {
                 return response()->json([
-                    "message" => "Liste des alertes validées de ".$user-> full_name."(".$user->email.")",
-                    "data" => AlertModel::with('dataaire.zonesante.territoir.province', 'maladie')->whereNotNull('children')->where('deleted', 0)->where('status', 0)->get(),
+                    "message" => "Liste des alerts",
+                    "data" => AlertModel::with('datauser', 'dataaire.zonesante.territoir.province', 'maladie',
+                                            'images')->orderby('created_at', 'desc')->where('deleted', 0)->where('status', 1)->whereNot('children',null)->get(),
+                ], 200);
+            } else {
+                return response()->json([
+                    "message" => "Vous ne pouvez pas éffectuer cette action",
+                    "code" => 402
+                ], 402);
+            }
+        } else {
+            return response()->json([
+                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
+                "code" => 402
+            ], 402);
+        }
+    }
+    public function getAlertvalideByuser($orgid)
+    {
+        $user = Auth::user();
+        $permission = Permission::where('name', 'view_alert_valide')->first();
+        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
+        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
+        $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
+            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
+        if ($organisation) {
+            if ($permission_gap) {
+                return response()->json([
+                    "message" => "Liste des alertes validées de " . $user->full_name . "(" . $user->email . ")",
+                    "data" => AlertModel::with('datauser', 'dataaire.zonesante.territoir.province', 'maladie',
+                                            'images')->orderby('created_at', 'desc')->where('orguserid', $orgid)->where('deleted', 0)->where('status', 1)->where('userid_valider', $user->id)->whereNot('children',null)->get(),
                 ], 200);
             } else {
                 return response()->json([
@@ -432,7 +511,8 @@ class AlertController extends Controller
         if ($alert) {
             return response()->json([
                 "message" => "Detail de l'alert",
-                "data" => AlertModel::with('dataaire.zonesante.territoir.province', 'maladie')->where('id', $alert->id)->where('deleted', 0)->where('status', 0)->first(),
+                "data" => AlertModel::with('datauser', 'dataaire.zonesante.territoir.province', 'maladie',
+                                            'images')->where('id', $alert->id)->first(),
             ], 200);
         } else {
             return response()->json([
@@ -444,7 +524,7 @@ class AlertController extends Controller
     public function alertuser($orgid)
     {
         $user = Auth::user();
-        $permission = Permission::where('name', 'view_alert_valide')->first();
+        $permission = Permission::where('name', 'view_alert')->first();
         $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
         $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
         $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
@@ -453,8 +533,9 @@ class AlertController extends Controller
             if ($permission_gap) {
                 if ($user) {
                     return response()->json([
-                        "message" => "Liste des alerts de ".$user-> full_name."(".$user->email.")",
-                        "data" => AlertModel::with('dataaire.zonesante.territoir.province', 'maladie')->where('deleted', 0)->where('status', 0)->where('userid', $user->id)->get(),
+                        "message" => "Liste des alerts de " . $user->full_name . "(" . $user->email . ")",
+                        "data" => AlertModel::with('datauser', 'dataaire.zonesante.territoir.province', 'maladie',
+                                            'images')->orderby('created_at', 'desc')->where('orguserid', $orgid)->where('deleted', 0)->where('status', 0)->where('userid', $user->id)->get(),
                     ], 200);
                 } else {
                     return response()->json([
@@ -472,6 +553,107 @@ class AlertController extends Controller
             return response()->json([
                 "message" => "cette organisationid" . $organisation->id . "n'existe pas",
                 "code" => 402
+            ], 402);
+        }
+    }
+    public function getAlertInvalideByuser($orgid)
+    {
+        $user = Auth::user();
+        $permission = Permission::where('name', 'view_alert')->first();
+        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
+        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
+        $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
+            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
+        if ($organisation) {
+            if ($permission_gap) {
+                return response()->json([
+                    "message" => "Liste des alertes invalides de " . $user->full_name . "(" . $user->email . ")",
+                    "data" => AlertModel::with('datauser', 'dataaire.zonesante.territoir.province', 'maladie',
+                                            'images')->where('children',null)->where('status', 2)
+                        ->where('userid', $user->id)->get(),
+                ], 200);
+            } else {
+                return response()->json([
+                    "message" => "Vous ne pouvez pas éffectuer cette action",
+                    "code" => 402
+                ], 402);
+            }
+        } else {
+            return response()->json([
+                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
+                "code" => 402
+            ], 402);
+        }
+    }
+
+    public function getAlertInvalide($orgid)
+    {
+        $user = Auth::user();
+        $permission = Permission::where('name', 'view_alert')->first();
+        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
+        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $orgid)->first();
+        $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
+            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
+        if ($organisation) {
+            if ($permission_gap) {
+                return response()->json([
+                    "message" => "Liste des alertes invalides",
+                    "data" => AlertModel::with('datauser', 'dataaire.zonesante.territoir.province', 'maladie',
+                                            'images')->where('children',null)->where('status', 2)->get(),
+                ], 200);
+            } else {
+                return response()->json([
+                    "message" => "Vous ne pouvez pas éffectuer cette action",
+                    "code" => 402
+                ], 402);
+            }
+        } else {
+            return response()->json([
+                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
+                "code" => 402
+            ], 402);
+        }
+    }
+    public function getlastalertvalide()
+    {
+
+        $dt = new DateTime();
+        $startDate = $dt->format('Y-m-d');
+
+        return response()->json([
+            "message" => "Liste des alerts",
+            "data" => AlertModel::with('datauser', 'dataaire.zonesante.territoir.province', 'maladie',
+                                            'images')
+                ->orderby('datealert', 'desc')->whereNot('children',null)->get(),
+        ], 200);
+
+    }
+     public function Imagealert(Request $request, $id)
+    {
+
+        $dataalert = AlertModel::where('id', $id)->first();
+        if ($dataalert) {
+            $image = UtilController::uploadMultipleImage($request->images, '/uploads/alert/');
+            foreach ($image as $item) {
+                $dataalert->imagesalert()->attach([$dataalert->id =>
+                [
+                    'image' => $item,
+                ]]);
+            }
+            return response()->json([
+                "message" => 'Traitement réussi avec succès!',
+                "code" => 200,
+                "data" => AlertModel::with(
+                    'datauser',
+                    'dataaire.zonesante.territoir.province',
+                    'maladie',
+                    'images'
+                )->where('id', $id)->first(),
+            ], 200);
+        } else {
+            return response()->json([
+                "message" => "C'est identifiant d'alert n'existe pas!",
+                "code" => 402,
             ], 402);
         }
     }

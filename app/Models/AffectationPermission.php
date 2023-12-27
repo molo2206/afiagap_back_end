@@ -22,12 +22,6 @@ class AffectationPermission extends Model
         return $this->belongsTo(Permission::class, 'permissionid','id');
     }
 
-    public function affectation(){
-        return $this->belongsTo(AffectationModel::class, 'affectationid','id');
-    }
 
-    public function permission1(){
-        return $this->hasMany(Permission::class, 'id','permissionid');
-    }
 
 }

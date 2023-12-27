@@ -93,11 +93,16 @@ class ScoreCardController extends Controller
         $datascore = ReponseModel::where('gapid',$request->gapid)->first();
         if ($datascore)
         {
-            foreach ($request->datareponse as $item)
-            {
-             $reponse_question = ReponseModel::where('questionid',$item['questionid'])->first();
-             $reponse_question->response=$item['reponse'];
-             $reponse_question->save();
+            //MODIFICATION SCORECARD
+            if ($gapid) {
+                $gapid->scorecardgap()->detach();
+                foreach ($request->datareponse as $item) {
+                    $reponse_question = ReponseModel::where('questionid', $item['questionid'])->first();
+                    $gapid->scorecardgap()->attach([$request->gapid =>
+                    [
+                        $reponse_question->response = $item['reponse']
+                    ]]);
+                }
             }
             return response()->json([
                 "message" => "Traitement réussie avec succès!",

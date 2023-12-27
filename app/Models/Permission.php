@@ -18,8 +18,4 @@ class Permission extends Model
               'psedo',
     ];
 
-    public function affectpermission(){
-        return $this->hasMany(AffectationPermission::class, 'permissionid','id');
-    }
-
 }

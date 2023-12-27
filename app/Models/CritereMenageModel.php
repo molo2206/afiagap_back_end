@@ -20,6 +20,4 @@ class CritereMenageModel extends Model
    {
        return $this->belongsTo(CritereVulModel::class, 'cretereid','id');
    }
-
-
 }

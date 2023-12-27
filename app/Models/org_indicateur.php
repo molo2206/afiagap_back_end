@@ -28,7 +28,7 @@ class org_indicateur extends Model
 
     public function paquetappui()
     {
-        return $this->hasMany(indicateur::class, 'indicateurid','id');
+        return $this->belongsTo(indicateur::class, 'indicateurid','id');
     }
 
 }

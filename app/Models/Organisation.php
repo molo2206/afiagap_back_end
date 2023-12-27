@@ -29,7 +29,6 @@ class Organisation extends Model
         'adresse',
         'pointfocal',
         'typeorgid',
-        'category',
         'status',
         'delete'
     ];
@@ -39,6 +38,9 @@ class Organisation extends Model
         return $this->hasMany(org_indicateur::class, 'orgid','id');
     }
 
+    public function type_org(){
+        return $this->belongsTo(typeorg::class, 'typeorgid','id');
+    }
 
 
 }

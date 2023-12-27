@@ -10,8 +10,8 @@ use Laravel\Sanctum\HasApiTokens;
 
 class GapsModel extends Model
 {
-    use HasApiTokens, HasFactory, Notifiable,HasUuids;
-    protected $table="t_gaps_bloc1";
+    use HasApiTokens, HasFactory, Notifiable, HasUuids;
+    protected $table = "t_gaps_bloc1";
     protected $fillable = [
         'id',
         'title',
@@ -20,7 +20,6 @@ class GapsModel extends Model
         'zoneid',
         'airid',
         'orgid',
-        'children',
         'population',
         'pop_deplace',
         'pop_retourne',
@@ -28,6 +27,7 @@ class GapsModel extends Model
         'criseid',
         'userid',
         'orguserid',
+        'children',
         'semaine_epid',
         'annee_epid',
         'etat_top',
@@ -35,64 +35,121 @@ class GapsModel extends Model
         'deleted',
         'dateadd'
     ];
-
+    public function datauser()
+    {
+        return $this->belongsTo(User::class, 'userid', 'id');
+    }
     public function dataprovince()
     {
-        return $this->belongsTo(province::class, 'provinceid','id');
+        return $this->belongsTo(province::class, 'provinceid', 'id');
     }
 
     public function dataterritoir()
     {
-        return $this->belongsTo(territoir::class, 'territoirid','id');
+        return $this->belongsTo(territoir::class, 'territoirid', 'id');
     }
     public function datazone()
     {
-        return $this->belongsTo(zonesante::class, 'zoneid','id');
+        return $this->belongsTo(zonesante::class, 'zoneid', 'id');
     }
 
     public function dataaire()
     {
-        return $this->belongsTo(airesante::class, 'airid','id');
+        return $this->belongsTo(airesante::class, 'airid', 'id');
     }
-
     public function datamaladie()
     {
-        return $this->hasMany(MaladiedGap::class, 'gapid','id');
+        return $this->hasMany(MaladiedGap::class, 'gapid', 'id');
     }
 
     public function datamedicament()
     {
-        return $this->hasMany(MedicamentRupture::class, 'gapid','id');
+        return $this->hasMany(MedicamentRupture::class, 'gapid', 'id');
     }
 
     public function datapartenaire()
     {
-        return $this->hasMany(PartenairePresntModel::class, 'gapid','id');
+        return $this->hasMany(PartenairePresntModel::class, 'gapid', 'id');
     }
 
     public function datatypepersonnel()
     {
-        return $this->hasMany(PersonnelGap::class, 'gapid','id');
+        return $this->hasMany(PersonnelGap::class, 'gapid', 'id');
     }
-     public function datapopulationEloigne()
+    public function datapopulationEloigne()
     {
-        return $this->hasMany(PopulationEloigne::class, 'gapid','id');
+        return $this->hasMany(PopulationEloigne::class, 'gapid', 'id');
     }
-     public function datastructure()
+    public function datastructure()
     {
-        return $this->belongsTo(structureSanteModel::class, 'orgid','id');
-    }
-     public function datascorecard(){
-           return $this->hasMany(ReponseModel::class, 'gapid','id');
+        return $this->belongsTo(structureSanteModel::class, 'orgid', 'id');
     }
 
-    public function suite1(){
-        return $this->belongsTo(Bloc2Model::class, 'id','bloc1id');
+    public function datascorecard()
+    {
+        return $this->hasMany(ReponseModel::class, 'gapid', 'id');
+    }
+    public function suite1()
+    {
+        return $this->belongsTo(Bloc2Model::class, 'id', 'bloc1id');
     }
 
     public function allcrise()
     {
-        return $this->hasMany(Crise_Gap::class, 'gapid','id');
+        return $this->hasMany(Crise_Gap::class, 'gapid', 'id');
     }
+
+    public function images()
+    {
+        return $this->hasMany(ImageGapModel::class, 'gapid', 'id');
+    }
+
+    public function maladiegap()
+    {
+        return $this->belongsToMany(Maladie::class, 't_maladie_gap', 'gapid', 'maladieid')->withPivot(["nbrCas", "nbrDeces",])->as('maladie');
+    }
+
+    public function medicamentrupture()
+    {
+        return $this->belongsToMany(MedicamentModel::class, 't_medicament_rupture', 'gapid', 'medocid')->withPivot(["status"])->as('medicament_rupture');
+    }
+
+    public function partenairegap()
+    {
+        return $this->belongsToMany(Organisation::class, 't_partenaire_presents', 'gapid', 'orgid')
+            ->withPivot(["contact_point_facal", "orgid", "date_debut", "date_fin"])->as('partenaire_presents');
+    }
+
+    public function indicateurgap()
+    {
+        return $this->belongsToMany(indicateur::class, 't_org_indicateur', 'gapid', 'orgid')->withPivot(["indicateurid", "orgid"])->as('partenaire');
+    }
+
+    public function typepersonnelgap()
+    {
+        return $this->belongsToMany(PersonnelModel::class, 't_personnel_gap', 'gapid', 'personnelid')->withPivot(["personnelid", "nbr"])->as('typepersonnel');
+    }
+
+    public function crisegap()
+    {
+        return $this->belongsToMany(TypeCrise::class, 't__type_crise__gap', 'gapid', 'criseid')->withPivot(["criseid"])->as('crise');
+    }
+
+    public function populationeloignegap()
+    {
+        return $this->belongsToMany(PopulationEloigne::class, 't_population_eloigne_gap', 'gapid', 'localite')->withPivot(["localite", "nbr"])->as('population_eloigne');
+    }
+
+    public function imagesgap()
+    {
+        return $this->belongsToMany(ImageGapModel::class, 't_image_gap', 'gapid', 'image')->withPivot(["image"])->as('images_gap');
+    }
+
+    public function scorecardgap()
+    {
+        return $this->belongsToMany(QuestionModel::class, 't_reponse', 'gapid','questionid')->
+        withPivot(['questionid'])->as('scorecardgap');
+    }
+
 
 }

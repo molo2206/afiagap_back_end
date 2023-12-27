@@ -20,7 +20,8 @@ class airesante extends Model
      protected $table="t_aire_sante";
      protected $fillable = [
         'name',
-        "zoneid"
+        "zoneid",
+        "nbr_population"
     ];
 
     public function zonesante(){
