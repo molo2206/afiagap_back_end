@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\ConfigurationController;
+use App\Http\Controllers\GapAppuiController;
 use App\Http\Controllers\MenageController;
 use App\Http\Controllers\ScoreCardController;
 use App\Http\Controllers\PublicationsController;
@@ -68,8 +69,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/users/editimage',[UserController::class, 'editImage']);
     Route::get('/users/get_user',[UserController::class, 'getuser']);
     Route::post('/users/new_user', [UserController::class, 'NewUser']);
-    
-    
+
+
 
     //les routes des permissions
     Route::post('/role/addrole/{id}', [RoleController::class, 'create']);
@@ -142,7 +143,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/gap/listgap_aire/{id}', [GapsController::class, 'listGapAire']);
     Route::get('/gap/detailgap/{id}', [GapsController::class, 'DetailGaps']);
 
-    //Alert 
+    //Alert
     Route::post('/alert/sendAlert', [AlertController::class, 'sendAlert']);
     Route::post('/alert/sendimageAlert/{id}', [AlertController::class, 'Imagealert']);
     Route::put('/alert/updateAlert/{id}', [AlertController::class, 'updateAlert']);
@@ -158,12 +159,12 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/alert/get_alert_valide_byuser/{id}', [AlertController::class, 'getAlertvalideByuser']);
     Route::get('/alert/get_alertinvalide_byuser/{id}',[AlertController::class,'getAlertInvalideByuser']);
     Route::get('/alert/get_all_alertinvalide/{id}', [AlertController::class,'getAlertInvalide']);
-    
+
      //Publication
     Route::post('/publication/addpublication',[PublicationsController::class,'addpublication']);
     Route::get('/publication/getpublication',[PublicationsController::class,'getpublication']);
 
-    
+
      //ScoreCard
     Route::post('/scorecard/addentete_question', [ScoreCardController::class, 'AddEntete']);
     Route::get('/scorecard/listentete', [ScoreCardController::class, 'list_entete']);
@@ -184,17 +185,21 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/menage/code_menage/{code}', [MenageController::class, 'CodeMenage']);
     Route::get('/menage/detail_menage/{id}', [MenageController::class, 'DetailMenage']);
     Route::get('/menage/list_critere', [MenageController::class, 'listcritere']);
-    
+
     //Gestion des activitées de l'entrepise
     Route::post('/activite/create_activite',[ActiviteController::class, 'create_activite']);
     Route::post('/activite/update_activite/{id}',[ActiviteController::class, 'updateactivite']);
     Route::get('/activite/get_activite/{id}',[ActiviteController::class, 'get_activite']);
     Route::get('/activite/detailactivite/{id}',[ActiviteController::class,'detailActivite']);
     Route::get('/activite/getcohp',[ActiviteController::class,'getcohp']);
-    
-    
+
      // Configuration afiagap
     Route::post('/configuration/create_infos_app',[ConfigurationController::class, 'create_infos_app']);
     Route::post('/configuration/create_logo_fiveicon',[ConfigurationController::class, 'create_logo_fiveicon']);
-    
+
+    //Gap_Appui
+    Route::post('/gap_appui/create_gap_appui/{id}',[GapAppuiController::class, 'create_gap_appui']);
+    Route::get('/gap_appui/get_type_gap',[GapAppuiController::class, 'get_type_gap']);
+    Route::post('/gap_appui/add_type_gap',[GapAppuiController::class, 'add_type_gap']);
+
 });

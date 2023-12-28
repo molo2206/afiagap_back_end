@@ -151,5 +151,15 @@ class GapsModel extends Model
         withPivot(['questionid'])->as('scorecardgap');
     }
 
+    public function gap_appuis()
+    {
+        return $this->hasMany(GapAppuiModel::class,'gapid', 'id');
+    }
+
+    public function gap_appui()
+    {
+        return $this->belongsToMany(GapAppuiModel::class, 't_gaps_appui', 'gapid','key')->
+        withPivot(['gapid'])->as('gap_appui');
+    }
 
 }

@@ -15,7 +15,7 @@ class ActiviteModel extends Model
     protected $table="t_activites";
 
     protected $fillable = [
-              "title_projet",
+        "title_projet",
         "provinceid",
         "territoirid",
         "zoneid",

@@ -56,7 +56,7 @@ class UserController extends Controller
             ], 404);
         }
     }
-    
+
     public function getuser(){
         $user = Auth::user();
         return response()->json([
@@ -359,7 +359,7 @@ class UserController extends Controller
                                     "orgid" => $request->orgid,
                                     "profil" => 'https://apiafiagap.cosamed.org/public/uploads/user/a01f3ca6e3e4ece8e1a30696f52844bc.png'
                                 ]);
-                               
+
                                 $change = CodeValidation::where('code', $request->code)->first();
                                 $change->update([
                                     "status" => 1,
