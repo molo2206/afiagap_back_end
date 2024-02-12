@@ -15,9 +15,10 @@ class BeneficeCibleProjet extends Model
     protected $table = "t_benef_cible_projet";
     protected $fillable = [
         "id",
-        "projetid",
+        "activiteid",
         "structureid",
         "indicateurid",
+        "typeimpactid",
         'orguserid',
         "homme_cible",
         "femme_cible",
@@ -48,4 +49,12 @@ class BeneficeCibleProjet extends Model
     {
         return $this->belongsTo(structureSanteModel::class, 'structureid', 'id');
     }
+
+    public function projet(){
+        return $this->belongsTo(ProjetModel::class, 'projetid', 'id');
+    }
+    public function typeimpact(){
+        return $this->belongsTo(TypeImpactModel::class, 'typeimpactid', 'id');
+    }
+
 }

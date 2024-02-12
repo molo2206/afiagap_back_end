@@ -15,7 +15,7 @@ class BeneficeAtteintProjet extends Model
     protected $table="t_benef_atteint_projet";
     protected $fillable = [
         "id",
-        "projetid",
+        "activiteid",
         "structureid",
         "indicateurid",
         'orguserid',

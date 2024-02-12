@@ -47,7 +47,7 @@ Route::get('/gap/getlastgapvalide',[GapsController::class, 'getlastgapvalide']);
 Route::get('/alert/getlastalertvalide',[AlertController::class, 'getlastalertvalide']);
 Route::post('/contact/getintouch',[PublicationsController::class, 'contact']);
 Route::get('/configuration/get_infos_organisation',[ConfigurationController::class,'get_infos_organisation']);
-Route::get('/menage/list_menages', [MenageController::class, 'listmenage']);
+
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
 
@@ -190,7 +190,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     //Gestion des activitées de l'entrepise
     Route::post('/activite/create_activite',[ActiviteController::class, 'create_activite']);
     Route::post('/activite/update_activite/{id}',[ActiviteController::class, 'updateactivite']);
-    Route::get('/activite/get_activite/{id}',[ActiviteController::class, 'get_activite']);
+    Route::get('/activite/get_activite/{id}',[ProjetController::class, 'getactivites']);
     Route::get('/activite/detailactivite/{id}',[ActiviteController::class,'detailActivite']);
     Route::get('/activite/getcohp',[ActiviteController::class,'getcohp']);
 
@@ -214,8 +214,10 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/projet/getstructurebyprojet/{id}',[ProjetController::class, 'getStructureByProjet']);
     Route::get('/projet/gettypevaccin',[ProjetController::class, 'gettypevaccin']);
     Route::get('/projet/get_all_activites/{id}',[ProjetController::class, 'getactivites']);
-    
+
     Route::get('/projet/gettype_projet',[ProjetController::class,'gettype_projet']);
     Route::get('/projet/gettype_impact',[ProjetController::class,'gettype_impact']);
     Route::get('/projet/getindicateur/{id}',[ProjetController::class,'getindicateur']);
+
+
 });

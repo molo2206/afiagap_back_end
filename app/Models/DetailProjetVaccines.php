@@ -18,4 +18,8 @@ class DetailProjetVaccines extends Model
         'typevaccinid',
         'nbr_vaccine',
     ];
+
+    public function Vaccination(){
+        return $this->belongsTo(TypeVaccin::class, 'typevaccinid','id');
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActiviteProjetModel;
 use App\Models\AffectationModel;
 use App\Models\AffectationPermission;
 use App\Models\BeneficeAtteintProjet;
@@ -231,7 +232,11 @@ class ProjetController extends Controller
                 return response()->json([
                     "message" => "Success",
                     "code" => 200,
-                    "data" => Organisation::with(
+                    "data" => ActiviteProjetModel::with(
+                        "projet",
+                        "projet.datatypeimpact.typeimpact",
+                        "projet.datatypeimpact.indicateur.indicateur",
+                        'databeneficecible.typeimpact',
                         'databeneficecible.indicateur',
                         'databeneficecible.structuresante',
                         'databeneficeatteint.indicateur',
@@ -242,11 +247,8 @@ class ProjetController extends Controller
                         'dataconsultationcliniquemobile.structuresante',
                         'autresinfoprojet.indicateur',
                         'autresinfoprojet.structuresante',
-                        'autresinfoprojet.infosVaccination',
-                        'autresinfoprojet.indicateur',
-                        'autresinfoprojet.structuresante', 
-                        'autresinfoprojet.infosVaccination',
-                        )->where('id',$orgid)->get(),
+                        'autresinfoprojet.infosVaccinations.Vaccination',
+                    )->where('orgid', $orgid)->orderBy('created_at', 'desc')->get(),
                 ], 200);
             } else {
                 return response()->json([
@@ -280,18 +282,6 @@ class ProjetController extends Controller
                         'struturesantes.airesante.zonesante.territoir.province',
                         'data_organisation_make_rapport.type_org',
                         'data_organisation_mise_en_oeuvre.type_org',
-                        'databeneficecible.indicateur',
-                        'databeneficecible.structuresante',
-                        'databeneficeatteint.indicateur',
-                        'databeneficeatteint.structuresante',
-                        'dataconsultationexterne.indicateur',
-                        'dataconsultationexterne.structuresante',
-                        'dataconsultationcliniquemobile.indicateur',
-                        'dataconsultationcliniquemobile.structuresante',
-                        'struturesantes',
-                        'autresinfoprojet.indicateur',
-                        'autresinfoprojet.structuresante', 
-                        'autresinfoprojet.infosVaccination',
                         'datatypeimpact.typeimpact',
                         'datatypeimpact.indicateur.indicateur',
                         'typeprojet',
@@ -454,6 +444,7 @@ class ProjetController extends Controller
             "data" => TypeProjet::get(),
         ], 200);
     }
+
     public function create_detail_projet(Request $request, $idprojet)
     {
 
@@ -471,14 +462,21 @@ class ProjetController extends Controller
 
             if ($permission_projet) {
 
-                $dataprojet = ProjetModel::find($idprojet);
+                $dataprojet = ProjetModel::where('id',$idprojet)->first();
+
+                $activity = ActiviteProjetModel::create([
+                    "projetid" => $dataprojet->id,
+                    "orgid" => $request->orgid
+                ]);
+
 
                 if ($dataprojet) {
 
                     BeneficeCibleProjet::create([
-                        'projetid' => $dataprojet->id,
+                        'activiteid' => $activity->id,
                         "structureid" => $request->structureid,
                         "indicateurid" => $request->indicateurid,
+                        "typeimpactid" => $request->typeimpactid,
                         'orguserid' => $request->orgid,
                         'homme_cible' => $request->homme_cible,
                         'femme_cible' =>  $request->femme_cible,
@@ -499,7 +497,7 @@ class ProjetController extends Controller
                     ]);
 
                     BeneficeAtteintProjet::create([
-                        'projetid' => $dataprojet->id,
+                        'activiteid' => $activity->id,
                         "structureid" => $request->structureid,
                         "indicateurid" => $request->indicateurid,
                         'orguserid' => $request->orgid,
@@ -520,7 +518,7 @@ class ProjetController extends Controller
                     ]);
 
                     ConsultationExterneFosaProjet::create([
-                        'projetid' => $dataprojet->id,
+                        'activiteid' => $activity->id,
                         "structureid" => $request->structureid,
                         "indicateurid" => $request->indicateurid,
                         'orguserid' => $request->orgid,
@@ -531,7 +529,7 @@ class ProjetController extends Controller
                     ]);
 
                     ConsultationCliniqueMobileProjet::create([
-                        'projetid' => $dataprojet->id,
+                        'activiteid' => $activity->id,
                         "structureid" => $request->structureid,
                         "indicateurid" => $request->indicateurid,
                         'orguserid' => $request->orgid,
@@ -542,11 +540,10 @@ class ProjetController extends Controller
                     ]);
 
                     $autre_info_projet = AutreInfoProjets::create([
-                        'projetid' => $dataprojet->id,
+                        "activiteid" => $activity->id,
                         "structureid" => $request->structureid,
                         "indicateurid" => $request->indicateurid,
                         'orguserid' => $request->orgid,
-
                         'axe_strategique' => $request->axe_strategique,
                         'odd' => $request->odd,
                         'description_activite' => $request->description_activite,
@@ -557,7 +554,11 @@ class ProjetController extends Controller
                         'email' => $request->email,
                         'phone' => $request->phone,
                         'date_rapportage' => $request->date_rapportage,
+                        'cohp_relais' => $request->cohp_relais,
+                        'nbr_malnutrition' => $request->nbr_malnutrition,
+                        'nbr_cpn'=> $request->nbr_cpn,
                     ]);
+
 
                     $autre_info_projet->infosVaccination()->detach();
                     foreach ($request->infosVaccination as $item) {
@@ -570,27 +571,8 @@ class ProjetController extends Controller
 
                     return response()->json([
                         "message" => "Success",
-                        "data" => ProjetModel::with(
-                            'struturesantes.airesante.zonesante.territoir.province',
-                            'data_organisation_make_rapport.type_org',
-                            'data_organisation_mise_en_oeuvre.type_org',
-                            'databeneficecible.indicateur',
-                            'databeneficecible.structuresante',
-                            'databeneficeatteint.indicateur',
-                            'databeneficeatteint.structuresante',
-                            'dataconsultationexterne.indicateur',
-                            'dataconsultationexterne.structuresante',
-                            'dataconsultationcliniquemobile.indicateur',
-                            'dataconsultationcliniquemobile.structuresante',
-                            'struturesantes',
-                            'autresinfoprojet.indicateur',
-                            'autresinfoprojet.structuresante',
-                            'autresinfoprojet.infosVaccination',
-                            'datatypeimpact.typeimpact',
-                            'datatypeimpact.indicateur.indicateur',
-                            'typeprojet',
-                        )->where('org_make_repport', $request->orgid)->orderBy('created_at', 'desc')->get()
-                    ]);
+                        "code" => 200
+                    ], 200);
                 } else {
                     return response()->json([
                         "message" => "Cette id du projet n'est pas reconnue dans le système!",
@@ -714,27 +696,8 @@ class ProjetController extends Controller
 
                     return response()->json([
                         "message" => "Success",
-                        "data" => ProjetModel::with(
-                            'struturesantes.airesante.zonesante.territoir.province',
-                            'data_organisation_make_rapport.type_org',
-                            'data_organisation_mise_en_oeuvre.type_org',
-                            'databeneficecible.indicateur',
-                            'databeneficecible.structuresante',
-                            'databeneficeatteint.indicateur',
-                            'databeneficeatteint.structuresante',
-                            'dataconsultationexterne.indicateur',
-                            'dataconsultationexterne.structuresante',
-                            'dataconsultationcliniquemobile.indicateur',
-                            'dataconsultationcliniquemobile.structuresante',
-                            'struturesantes',
-                            'autresinfoprojet.indicateur',
-                            'autresinfoprojet.structuresante',
-                            'autresinfoprojet.infosVaccination',
-                            'datatypeimpact.typeimpact',
-                            'datatypeimpact.indicateur.indicateur',
-                            'typeprojet',
-                        )->where('org_make_repport', $request->orgid)->orderBy('created_at', 'desc')->get()
-                    ]);
+                        "code" => 200,
+                    ], 200);
                 } else {
                     return response()->json([
                         "message" => "Cette id du projet n'est pas reconnue dans le système!",

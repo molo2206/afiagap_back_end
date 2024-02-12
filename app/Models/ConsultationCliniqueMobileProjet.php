@@ -15,7 +15,7 @@ class ConsultationCliniqueMobileProjet extends Model
     protected $table="t_consultation_clinique_mobil_projet";
     protected $fillable = [
        "id",
-       "projetid",
+       "activiteid",
        "structureid",
        "indicateurid",
 

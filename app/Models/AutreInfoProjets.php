@@ -15,7 +15,7 @@ class AutreInfoProjets extends Model
 
   protected $fillable = [
     'id',
-    'projetid',
+    'activiteid',
     'indicateurid',
     'structureid',
     'axe_strategique',
@@ -52,6 +52,10 @@ class AutreInfoProjets extends Model
   public function infosVaccination()
   {
     return $this->belongsToMany(TypeVaccin::class, 't_detail_projet_vaccines', 'autreid', 'typevaccinid');
+  }
+
+  public function infosVaccinations(){
+    return $this->hasMany(DetailProjetVaccines::class, 'autreid','id');
   }
 
 }

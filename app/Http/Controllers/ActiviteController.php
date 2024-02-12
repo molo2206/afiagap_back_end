@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ActiviteModel;
 use App\Models\AffectationModel;
 use App\Models\AffectationPermission;
+use App\Models\AutreInfoProjets;
 use App\Models\BeneficeAtteint;
 use App\Models\BeneficeCible;
 use App\Models\CohpModel;
@@ -115,6 +116,32 @@ class ActiviteController extends Controller
                     "consulte_moin_cinq_mob" => $request->consulte_moin_cinq_mob,
                     "consulte_cinq_plus_mob" => $request->consulte_cinq_plus_mob,
                 ]);
+
+                $autre_info_projet = AutreInfoProjets::create([
+                    "activiteid" => $activite->id,
+                    "structureid" => $request->structureid,
+                    "indicateurid" => $request->indicateurid,
+                    'orguserid' => $request->orgid,
+                    'axe_strategique' => $request->axe_strategique,
+                    'odd' => $request->odd,
+                    'description_activite' => $request->description_activite,
+                    'statut_activite' => $request->description_activite,
+                    "nbr_malnutrition" => $request->malnutrition,
+                    "remarque" => $request->remarque,
+                    'nbr_accouchement' => $request->nbr_accouchement,
+                    'email' => $request->email,
+                    'phone' => $request->phone,
+                    'date_rapportage' => $request->date_rapportage,
+                ]);
+
+                $autre_info_projet->infosVaccination()->detach();
+                    foreach ($request->infosVaccination as $item) {
+                        $autre_info_projet->infosVaccination()->attach([$autre_info_projet->id =>
+                        [
+                            'typevaccinid' => $item['typevaccinid'],
+                            'nbr_vaccine' => $item['nbr_vaccine'],
+                        ]]);
+                    }
 
                 return response()->json([
                     "message" => "Success",
@@ -242,6 +269,8 @@ class ActiviteController extends Controller
                 $consulclini->consulte_cinq_plus_mob = $request->consulte_cinq_plus_mob;
                 $consulclini->save();
 
+                
+
                 return response()->json([
                     "message" => "Modification avec succès",
                     "data" => ActiviteModel::with(
@@ -356,23 +385,7 @@ class ActiviteController extends Controller
 
     public function detailActivite($id)
     {
-        return response()->json([
-            "message" => "Detail d'une activité",
-            "data" => ActiviteModel::with(
-                'dataprovince',
-                'dataterritoir',
-                'datazone',
-                'dataaire',
-                'datastructure',
-                        'data_organisation_make_rapport.type_org',
-                        'data_organisation_mise_en_oeuvre.type_org',
-                'databeneficecible',
-                'databeneficeatteint',
-                'dataconsultationexterne',
-                'dataconsultationcliniquemobile',
-                'paquetappui.indicateur'
-            )->where('id', $id)->where('status', 0)->where('deleted', 0)->first()
-        ]);
+    
     }
     public function getcohp(){
            return response()->json([

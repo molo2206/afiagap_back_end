@@ -88,7 +88,6 @@ class ProjetModel extends Model
         return $this->belongsToMany(TypeImpactModel::class, 't_reponse_indicateur_projet', 'projetid', 'typeimpactid');
     }
 
-
     public function datatypeimpact()
     {
         return $this->hasMany(IndicateurProjetModel::class, 'projetid', 'id');

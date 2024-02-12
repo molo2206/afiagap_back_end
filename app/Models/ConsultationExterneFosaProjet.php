@@ -15,7 +15,7 @@ class ConsultationExterneFosaProjet extends Model
     protected $table = "t_consultation_externe_fosa_projet";
     protected $fillable = [
         "id",
-        "projetid",
+        "activiteid",
         "structureid",
         "indicateurid",
         'orguserid',
