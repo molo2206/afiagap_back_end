@@ -1054,7 +1054,7 @@ class GapsController extends Controller
                                                     }
                                                 }
 
-                                                  //INSERTION IMAGES GAP
+                                                //INSERTION IMAGES GAP
                                                 if ($datagap->images) {
                                                     foreach ($datagap->images()->get() as $item) {
                                                         $bloc1->imagesgap()->attach([$datagap->id =>
@@ -1622,5 +1622,63 @@ class GapsController extends Controller
                 "code" => 402,
             ], 402);
         }
+    }
+    public function search_all(Request $request)
+    {
+        $data = GapsModel::with(
+            'suite1.suite2',
+            'dataprovince',
+            'dataterritoir',
+            'datazone',
+            'dataaire',
+            'datastructure',
+            'datapopulationEloigne',
+            'datamaladie.maladie',
+            'allcrise.crise',
+            'datamedicament.medicament',
+            'datapartenaire.partenaire.allindicateur.paquetappui',
+            'datatypepersonnel.typepersonnel',
+            'datascorecard.dataquestion.datarubrique',
+            'images',
+            'gap_appuis'
+        );
+        if ($request->keyword) {
+            $data->where('title', 'like', '%' . $request->keyword . '%')
+                ->orwhere('t_gaps_bloc2.etat_infra', 'like', '%' . $request->keyword)
+                ->orwhere('t_gaps_bloc2.equipement', 'like', '%' . $request->keyword)
+                ->orwhere('t_province.name', 'like', '%' . $request->keyword . '%')
+                ->orwhere('t_territoire.name', 'like', '%' . $request->keyword . '%')
+                ->orwhere('t_zone.name', 'like', '%' . $request->keyword . '%')
+                ->orwhere('t_aire_sante.name', 'like', '%' . $request->keyword . '%')
+                ->orwhere('t_structure_sanitaire.name', 'like', '%' . $request->keyword . '%')
+                ->leftJoin('t_province', 't_province.id', '=', 't_gaps_bloc1.provinceid')
+                ->leftJoin('t_territoire', 't_territoire.id', '=', 't_gaps_bloc1.territoirid')
+                ->leftJoin('t_zone', 't_zone.id', '=', 't_gaps_bloc1.zoneid')
+                ->leftJoin('t_aire_sante', 't_aire_sante.id', '=', 't_gaps_bloc1.airid')
+                ->leftJoin('t_structure_sanitaire', 't_structure_sanitaire.id', '=', 't_gaps_bloc1.orgid')
+                ->leftJoin('t_gaps_bloc2', 't_gaps_bloc2.bloc1id', '=', 't_gaps_bloc1.id')
+                ->select(
+                    't_gaps_bloc1.title',
+                    't_gaps_bloc1.provinceid',
+                    't_gaps_bloc1.territoirid',
+                    't_gaps_bloc1.zoneid',
+                    't_gaps_bloc1.airid',
+                    't_gaps_bloc1.orgid',
+                    't_gaps_bloc1.population',
+                    't_gaps_bloc1.pop_deplace',
+                    't_gaps_bloc1.pop_retourne',
+                    't_gaps_bloc1.pop_site',
+                    't_gaps_bloc1.children',
+                    't_gaps_bloc1.semaine_epid',
+                    't_gaps_bloc1.annee_epid',
+                    't_gaps_bloc1.status',
+                );
+        }
+        $alldata = $data->get();
+        return response([
+            "message" => "Success",
+            "code" => 200,
+            "data" => $alldata,
+        ], 200);
     }
 }

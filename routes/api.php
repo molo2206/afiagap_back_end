@@ -47,7 +47,8 @@ Route::get('/gap/getlastgapvalide',[GapsController::class, 'getlastgapvalide']);
 Route::get('/alert/getlastalertvalide',[AlertController::class, 'getlastalertvalide']);
 Route::post('/contact/getintouch',[PublicationsController::class, 'contact']);
 Route::get('/configuration/get_infos_organisation',[ConfigurationController::class,'get_infos_organisation']);
-
+Route::post('/search_all', [GapsController::class, 'search_all']);
+Route::post('/search_news', [PublicationsController::class, 'recherche_publication']);
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
 
@@ -125,6 +126,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/listair/{id}', [Pyramide::class, 'listaire']);
     Route::post('/structure/addstructure', [Pyramide::class, 'addstructure']);
     Route::get('/structure/liststructure/{id}', [Pyramide::class, 'liststructure_par_aire']);
+    Route::get('/structure/all_structure', [Pyramide::class, 'All_structure']);
+    
     //Gap medical
     Route::post('/gap/sendGap', [GapsController::class, 'AddGap']);
     Route::post('/gap/sendImageGap/{id}', [GapsController::class, 'Imagegap']);
@@ -177,6 +180,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/menage/new_menage', [MenageController::class, 'create_menage']);
     Route::post('/menage/deletemenage',[MenageController::class, 'delete_menage']);
     Route::put('/menage/update_menage/{id}', [MenageController::class, 'updatemenage']);
+    Route::post('/menage/update_menage_fingerprint/{id}', [MenageController::class, 'updatepersonne_empreinte_digital']);
     Route::post('/menage/new_personne', [MenageController::class, 'create_personne']);
     Route::post('/menage/update_personne/{id}', [MenageController::class, 'updatepersonne']);
     Route::get('/menage/list_typepersonne', [MenageController::class, 'listtypepersonne']);
@@ -220,4 +224,6 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/projet/getindicateur/{id}',[ProjetController::class,'getindicateur']);
 
 
+
+    
 });

@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\Mail\contac_customs;
 use App\Mail\Contact;
 use App\Models\PublicationsModel;
@@ -9,37 +10,59 @@ use Illuminate\Support\Facades\Mail;
 
 class PublicationsController extends Controller
 {
-     public function addpublication(Request $request){
+    public function addpublication(Request $request)
+    {
         $request->validate([
             "image" => "required|image",
             "title" => "required",
-            "content"=> "required",
-            "auteur"=> "required",
-            "image"=> "required",
+            "content" => "required",
+            "auteur" => "required",
+            "image" => "required",
         ]);
 
         $image = UtilController::uploadImageUrl($request->image, '/uploads/publications/');
         PublicationsModel::create([
             "image" => $image,
             "title" => $request->title,
-            "content"=>$request->content,
-            "auteur"=> $request->auteur,
-            "legend"=> $request->legend,
+            "content" => $request->content,
+            "auteur" => $request->auteur,
+            "legend" => $request->legend,
         ]);
         return response()->json([
             "message" => 'Liste des publications',
-             "data" => PublicationsModel::orderby('created_at','desc')->get()
+            "data" => PublicationsModel::orderby('created_at', 'desc')->get()
         ], 200);
-     }
-     public function getpublication(){
+    }
+    public function getpublication()
+    {
         return response()->json([
             "message" => 'Liste des publications',
-             "data" => PublicationsModel::orderby('created_at','desc')->get(),
-             "code" => 200,
+            "data" => PublicationsModel::orderby('created_at', 'desc')->get(),
+            "code" => 200,
         ], 200);
-     }
-     
-     public function contact(Request $request)
+    }
+
+    public function recherche_publication(Request $request)
+    {
+
+        $data = PublicationsModel::where('title', 'like', '%' . $request->keyword . '%')
+            ->orwhere('content', 'like', '%' . $request->keyword . '%')
+            ->orwhere('auteur', 'like', '%' . $request->keyword . '%')
+            ->orwhere('legend', 'like', '%' . $request->keyword . '%')
+            ->select(
+                't_publications.id',
+                't_publications.title',
+                't_publications.content',
+                't_publications.auteur',
+            );
+        $alldata = $data->get();
+        return response([
+            "message" => "Success",
+            "code" => 200,
+            "data" => $alldata,
+        ], 200);
+    }
+    public function contact(Request $request)
     {
         $request->validate([
             'email' => 'required',

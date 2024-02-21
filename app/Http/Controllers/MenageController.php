@@ -14,6 +14,7 @@ use App\Models\PersonnesModel;
 use App\Models\QuestionEnceinteModel;
 use App\Models\ReponseEnceinteModel;
 use App\Models\RoleMenageModel;
+use App\Models\RoleModel;
 use App\Models\TypePersonneModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -297,6 +298,128 @@ class MenageController extends Controller
                             $datapersonne->lieu_naissance = $request->lieu_naissance;
                             $datapersonne->datenaiss = $request->datenaiss;
                             $datapersonne->sous_moustiquaire = $request->sous_moustiquaire;
+                            $datapersonne->nom_mere = $request->nom_mere;
+                            $datapersonne->manageid = $request->menageid;
+                            $datapersonne->femme_enceinte = $request->femme_enceint;
+                            $datapersonne->femme_allaitante = $request->femme_allaitante;
+                            $datapersonne->save();
+
+
+                            if (now()->diffInDays($request->datenaiss, true) < 1825) {
+                                $reponse = CalendrierVaccinModel::where('personneid', $id);
+                                $reponse->name = $request->calendrier;
+                                $reponse->save();
+                            }
+
+                            return response()->json([
+                                "message" => "La modification réussie avec succès",
+                                "data" => MenageModel::with('datapersonne.datatype_personne', 'datapersonne.datarole')->orderBy('created_at', 'desc')->where('id', $request->menageid)->get()
+                            ], 200);
+                        }
+                    } else {
+                        return response()->json([
+                            "message" => "Erreur de la modification avec cette id :" . $id,
+                        ], 422);
+                    }
+                } else {
+                    return response()->json([
+                        "message" => "cette personne (" .  $datapersonne->nom = $request->nom . " " .
+                            $datapersonne->postnom = $request->postnom . " ) n'existe pas",
+                        "code" => 402
+                    ], 402);
+                }
+            } else {
+                return response()->json([
+                    "message" => "Vous ne pouvez pas éffectuer cette action",
+                    "code" => 402
+                ], 402);
+            }
+        } else {
+            return response()->json([
+                "message" => "cette organisationid" . $organisation->id . "n'existe pas",
+                "code" => 402
+            ], 402);
+        }
+    }
+
+    public function updatepersonne_empreinte_digital(Request $request, $id)
+    {
+        $request->validate([
+            'nom' => 'required',
+            'postnom' => 'required',
+            'prenom' => 'required',
+            'sexe' => 'required',
+            'roleid' => 'required',
+            'typepersonneid' => 'required',
+            'nom_pere' => 'required',
+            'lieu_naissance' => 'required',
+            'datenaiss' => 'required',
+            "manageid" => 'required',
+            "nom_mere" => 'required',
+            "orgid" => 'required',
+        ]);
+
+        $user = Auth::user();
+        $image = UtilController::uploadImageUrl($request->photo, '/uploads/vulnerable/');
+        $permission = Permission::where('name', 'update_personne')->first();
+        $organisation = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
+        $affectationuser = AffectationModel::where('userid', $user->id)->where('orgid', $request->orgid)->first();
+        $permission_gap = AffectationPermission::with('permission')->where('permissionid', $permission->id)
+            ->where('affectationid', $affectationuser->id)->where('deleted', 0)->where('status', 0)->first();
+
+        $datamenage = MenageModel::where('id', $request->menageid)->first();
+        $datapersonne = PersonnesModel::where('id', $id)->where('manageid', $request->menageid)->first();
+        $roleid = RoleMenageModel::where('name',$request->roleid)->first();
+        $typepersonneid = TypePersonneModel::where('name',$request->typepersonneid)->first();
+       
+        if ($organisation) {
+            if ($permission_gap) {
+                if ($datamenage) {
+                    if ($datapersonne) {
+                        if ($image) {
+                            $datapersonne->nom = $request->nom;
+                            $datapersonne->postnom = $request->postnom;
+                            $datapersonne->prenom = $request->prenom;
+                            $datapersonne->sexe = $request->sexe;
+                            $datapersonne->roleid = $roleid->id;
+                            $datapersonne->typepersonneid= $typepersonneid->id;
+                            $datapersonne->nom_pere = $request->nom_pere;
+                            $datapersonne->probleme_sante = $request->probleme_sante;
+                            $datapersonne->lieu_naissance = $request->lieu_naissance;
+                            $datapersonne->datenaiss = $request->datenaiss;
+                            $datapersonne->sous_moustiquaire = $request->sous_moustiquaire;
+                            $datapersonne->empreinte_digital = $request->empreinte_digital;
+                            $datapersonne->photo = $image;
+                            $datapersonne->nom_mere = $request->nom_mere;
+                            $datapersonne->manageid = $request->menageid;
+                            $datapersonne->femme_enceinte = $request->femme_enceint;
+                            $datapersonne->femme_allaitante = $request->femme_allaitante;
+                            $datapersonne->save();
+
+                            if (now()->diffInDays($request->datenaiss, true) < 1825) {
+                                $reponse = CalendrierVaccinModel::where('personneid', $id);
+                                $reponse->name = $request->calendrier;
+                                $reponse->save();
+                            }
+
+                            return response()->json([
+                                "message" => "La modification réussie avec succès",
+                                "data" => MenageModel::with('datapersonne.datatype_personne', 'datapersonne.datarole')->orderBy('created_at', 'desc')->where('id', $request->menageid)->get()
+                            ], 200);
+                        } else {
+                            $datapersonne->nom = $request->nom;
+                            $datapersonne->postnom = $request->postnom;
+                            $datapersonne->prenom = $request->prenom;
+                            $datapersonne->sexe = $request->sexe;
+                            $datapersonne->roleid = $roleid->id;
+                            $datapersonne->typepersonneid = $typepersonneid->id;
+                            $datapersonne->nom_pere = $request->nom_pere;
+                            $datapersonne->probleme_sante = $request->probleme_sante;
+                            $datapersonne->lieu_naissance = $request->lieu_naissance;
+                            $datapersonne->datenaiss = $request->datenaiss;
+                            $datapersonne->sous_moustiquaire = $request->sous_moustiquaire;
+                            $datapersonne->empreinte_digital = $request->empreinte_digital;
+                            $datapersonne->photo = $image;
                             $datapersonne->nom_mere = $request->nom_mere;
                             $datapersonne->manageid = $request->menageid;
                             $datapersonne->femme_enceinte = $request->femme_enceint;

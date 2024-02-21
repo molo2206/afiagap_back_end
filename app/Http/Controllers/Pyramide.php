@@ -111,7 +111,7 @@ class Pyramide extends Controller
             } else {
                 $province->territoir()->create([
                     'name' => $request->name,
-                    'provinceid' =>$request->provinceid
+                    'provinceid' => $request->provinceid
                 ]);
                 return response()->json([
                     "message" => "Enregistrement avec succès!",
@@ -194,7 +194,7 @@ class Pyramide extends Controller
         $request->validate([
             'name' => 'required',
             'zoneid' => 'required',
-            
+
         ]);
         if (!airesante::where('name', $request->name)->exists()) {
             $zone = airesante::create([
@@ -233,8 +233,8 @@ class Pyramide extends Controller
             ], 200);
         }
     }
-    
-      public function addstructure(Request $request)
+
+    public function addstructure(Request $request)
     {
         $request->validate([
             'name' => 'required',
@@ -253,7 +253,7 @@ class Pyramide extends Controller
             } else {
                 structureSanteModel::create([
                     'name' => $request->name,
-                    'aireid' =>$request->aireid,
+                    'aireid' => $request->aireid,
                     'contact' => $request->contact,
                 ]);
                 return response()->json([
@@ -282,10 +282,19 @@ class Pyramide extends Controller
         } else {
             $allstructure = structureSanteModel::where('aireid', $aire->id)->first();
             return response()->json([
-                "message" => "Liste des structure de aire de santé :".($allstructure->name),
+                "message" => "Liste des structure de aire de santé :" . ($allstructure->name),
                 "data" =>  structureSanteModel::where('aireid', $aire->id)->get(),
                 "code" => 200,
             ], 200);
         }
+    }
+
+    public function All_structure()
+    {
+        return response()->json([
+            "message" => "Liste des structures",
+            "data" => structureSanteModel::all(),
+            "code" => 422,
+        ], 422);
     }
 }
